@@ -19,7 +19,16 @@ class Client:
         msg = tk.Tk()
         msg.withdraw()
 
+        self.testarray = []
+        self.a = 3
+        self.testarray.append(self.a)
 
+        print(f"a: {self.a}")
+        print(f"array: {self.testarray[0]}")
+        print("------------")
+        self.a = 8
+        print(f"a: {self.a}")
+        print(f"array: {self.testarray[0]}")
 
         self.nickname = simpledialog.askstring("Login", "Enter your nickname", parent=msg)
 
@@ -59,14 +68,11 @@ class Client:
         users_label = tk.Label(self.users_frame, text='Connected Users:', bg='lightgray', font=('Arial', 14, 'bold'))
         users_label.pack(pady=5)
 
-        # Display nicknames
-        self.update_users_list([])  # Initially, no users
+        # Create a frame for the public chat button
+        public_chat_frame = tk.Frame(main_frame, bg='lightgray', padx=10, pady=10)
+        public_chat_frame.pack(side='left', fill='both')
 
-        # Create the frame for the public chat button
-        public_chat_frame = tk.Frame(self.users_frame, bg='lightgray', padx=10, pady=10)
-        public_chat_frame.pack(side='bottom', fill='both')
-
-        self.public_chat_button = tk.Button(public_chat_frame, text='Public')
+        self.public_chat_button = tk.Button(public_chat_frame, text='Public', command=lambda: self.switch_conversation(0))
         self.public_chat_button.pack(pady=5)
 
         # Create the right frame for the chat area
@@ -90,16 +96,23 @@ class Client:
         self.send_button = tk.Button(right_frame, text='Send', command=self.write)
         self.send_button.pack(pady=5)
 
-        self.gui_done = True
+        self.ChatRooms = [
+            {
+                "key": "PUBLIC",
+                "messages_area": self.text_area
+            }
+        ]
 
+        self.gui_done = True
+        # self.ChatRooms[0]["messages_area"].pack_forget()
         self.win.protocol('WM_DELETE_WINDOW', self.stop)
         self.win.mainloop()
 
-    # def switch_conversation(self, order):
-    #     if self.gui_done:
-    #         for chatroom in self.ChatRooms:
-    #             chatroom["messages_area"].forget_pack()
-    #         self.ChatRooms[order]["messages_area"].pack()
+    def switch_conversation(self, order):
+        if self.gui_done:
+            for chatroom in self.ChatRooms:
+                chatroom["messages_area"].pack_forget()
+            self.ChatRooms[order]["messages_area"].pack()
 
 
     def update_users_list(self, nicknames):
@@ -113,6 +126,8 @@ class Client:
                     user_frame.pack(fill='x', padx=5, pady=2)
                     user_label = tk.Label(user_frame, text=nickname, font=('Arial', 12), bg='lightgray')
                     user_label.pack(side='left')
+
+
                     if nickname != self.nickname:
                         message_button = tk.Button(user_frame, text='Message', command=lambda n=nickname: self.send_message_to(n))
                         message_button.pack(side='left')
@@ -164,6 +179,17 @@ class Client:
                 elif message["key"] == 'NICKNAMESLIST':
                     nicknames = pickle.loads(message["nicknames"])
                     self.update_users_list(nicknames)
+                    if self.gui_done:
+                        self.new_text_area = tkinter.scrolledtext.ScrolledText(right_frame)
+                        self.new_text_area.pack(padx=20, pady=5)
+                        self.new_text_area.config(state='disabled')
+                        self.new_text_area.pack_forget()
+                        new_chatroom = {
+                            "key": nickname,
+                            "messages_area": self.new_text_area
+                        }
+                        self.ChatRooms.append(self.new_chatroom)
+                        print(self.ChatRooms)
             except ConnectionAbortedError:
                 break
 
