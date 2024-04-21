@@ -5,7 +5,7 @@ import tkinter as tk
 from tkinter import simpledialog
 import tkinter.scrolledtext
 import pickle
-
+import time
 
 HOST = socket.gethostname()
 PORT = 9999
@@ -22,6 +22,9 @@ class Client:
         self.testarray = []
         self.a = 3
         self.testarray.append(self.a)
+
+        self.ChatRooms = []
+
 
         print(f"a: {self.a}")
         print(f"array: {self.testarray[0]}")
@@ -76,32 +79,32 @@ class Client:
         self.public_chat_button.pack(pady=5)
 
         # Create the right frame for the chat area
-        right_frame = tk.Frame(main_frame, bg='white', padx=10, pady=10)
-        right_frame.pack(side='left', fill='both', expand=True)
+        self.right_frame = tk.Frame(main_frame, bg='white', padx=10, pady=10)
+        self.right_frame.pack(side='left', fill='both', expand=True)
 
-        self.chat_label = tk.Label(right_frame, text='Chat:', background='white', font=('Arial', 20))
+        self.chat_label = tk.Label(self.right_frame, text='Chat:', background='white', font=('Arial', 20))
         self.chat_label.pack(pady=5)
 
-        self.text_area = tkinter.scrolledtext.ScrolledText(right_frame)
+        self.text_area = tkinter.scrolledtext.ScrolledText(self.right_frame)
         self.text_area.pack(padx=20, pady=5)
         self.text_area.config(state='disabled')
 
-        self.msg_label = tk.Label(right_frame, text='Message:', background='lightgray', font=('Arial', 15))
+        self.msg_label = tk.Label(self.right_frame, text='Message:', background='lightgray', font=('Arial', 15))
         self.msg_label.pack(pady=5)
 
-        self.input_area = tk.Text(right_frame, height=3)
+        self.input_area = tk.Text(self.right_frame, height=3)
         self.input_area.pack(padx=20, pady=5)
         self.input_area.bind('<KeyRelease>', self.send_message)
 
-        self.send_button = tk.Button(right_frame, text='Send', command=self.write)
+        self.send_button = tk.Button(self.right_frame, text='Send', command=self.write)
         self.send_button.pack(pady=5)
 
-        self.ChatRooms = [
+        self.ChatRooms.append(
             {
                 "key": "PUBLIC",
                 "messages_area": self.text_area
             }
-        ]
+        )
 
         self.gui_done = True
         # self.ChatRooms[0]["messages_area"].pack_forget()
@@ -113,6 +116,7 @@ class Client:
             for chatroom in self.ChatRooms:
                 chatroom["messages_area"].pack_forget()
             self.ChatRooms[order]["messages_area"].pack()
+        print(self.ChatRooms)
 
 
     def update_users_list(self, nicknames):
@@ -128,12 +132,39 @@ class Client:
                     user_label.pack(side='left')
 
 
+
                     if nickname != self.nickname:
                         message_button = tk.Button(user_frame, text='Message', command=lambda n=nickname: self.send_message_to(n))
                         message_button.pack(side='left')
                 break
             except:
                 pass
+       textarea_created = False
+       while textarea_created==False :
+           try:
+               for nickname in nicknames:
+                   print(f"im what u want: {nicknames}")
+
+                   if not any(chatroom['key'] == nickname for chatroom in self.ChatRooms):
+
+                       self.new_text_area = tkinter.scrolledtext.ScrolledText(self.right_frame)
+                       self.new_text_area.pack(padx=20, pady=5)
+                       self.new_text_area.config(state='disabled')
+                       self.new_text_area.pack_forget()
+                       new_chatroom = {
+                           "key": nickname,
+                           "messages_area": self.new_text_area
+                       }
+                       self.ChatRooms.append(new_chatroom)
+                       print("heloooooooooooo")
+
+                   self.ChatRooms = [chatroom for chatroom in self.ChatRooms if
+                                     chatroom['key'] == 'PUBLIC' or chatroom['key'] in nicknames]
+
+                   textarea_created = True
+
+           except Exception as e:
+               print(e)
 
     def send_message_to(self, nickname):
         # Your code to handle sending a message to a specific user goes here
@@ -179,17 +210,41 @@ class Client:
                 elif message["key"] == 'NICKNAMESLIST':
                     nicknames = pickle.loads(message["nicknames"])
                     self.update_users_list(nicknames)
-                    if self.gui_done:
-                        self.new_text_area = tkinter.scrolledtext.ScrolledText(right_frame)
-                        self.new_text_area.pack(padx=20, pady=5)
-                        self.new_text_area.config(state='disabled')
-                        self.new_text_area.pack_forget()
-                        new_chatroom = {
-                            "key": nickname,
-                            "messages_area": self.new_text_area
-                        }
-                        self.ChatRooms.append(self.new_chatroom)
-                        print(self.ChatRooms)
+
+                    # while True:
+                    #     found_new_nickname = True
+                    #     for chatroom in self.ChatRooms:
+                    #         for nickname in nicknames:
+                    #             if nickname == chatroom["key"]:
+                    #                 found_new_nickname = False
+                    #
+                    #     if found_new_nickname:
+                    #         while True:
+                    #             try:
+                    #                 self.new_text_area = tkinter.scrolledtext.ScrolledText(right_frame)
+                    #                 self.new_text_area.pack(padx=20, pady=5)
+                    #                 self.new_text_area.config(state='disabled')
+                    #                 self.new_text_area.pack_forget()
+                    #                 new_chatroom = {
+                    #                     "key": nickname,
+                    #                     "messages_area": self.new_text_area
+                    #                 }
+                    #                 self.ChatRooms.append(self.new_chatroom)
+                    #                 break
+                    #             except:
+                    #                 pass
+
+                    # if self.gui_done:
+                    #     self.new_text_area = tkinter.scrolledtext.ScrolledText(right_frame)
+                    #     self.new_text_area.pack(padx=20, pady=5)
+                    #     self.new_text_area.config(state='disabled')
+                    #     self.new_text_area.pack_forget()
+                    #     new_chatroom = {
+                    #         "key": nickname,
+                    #         "messages_area": self.new_text_area
+                    #     }
+                    #     self.ChatRooms.append(self.new_chatroom)
+                    #     print(self.ChatRooms)
             except ConnectionAbortedError:
                 break
 
